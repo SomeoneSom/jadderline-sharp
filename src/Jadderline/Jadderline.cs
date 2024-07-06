@@ -29,6 +29,7 @@
                     inputs.RemoveAt(inputs.Count - 1);
                 }
                 // Get all 262144 candidates
+                // Best speed optimization would probably be not using bool arrays, but I cba to do that right now, and its fast enough for now
                 List<(bool[], bool[])> potential = new();
                 for (int j = 0; j < 512; j++) {
                     for (int k = 0; k < 512; k++) {
