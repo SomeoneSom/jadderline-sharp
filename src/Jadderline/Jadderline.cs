@@ -11,7 +11,7 @@
         // The additional inputs may or may not need commas, not 100% sure
         // This doesnt go back a frame if an impossible frame is reached, but ive never seen it ever go back in jadderline so its not too much of a priority currently
         public static string Run(float playerPos, float playerSpeed, float jelly2Pos, int ladders, bool direction, bool moveOnly, string additionalInputs) {
-            if (ladders < 2) {
+            if (ladders < 2) { // Because we calculate the jelly ladders in 2 regrab windows
                 throw new ArgumentException("Must calculate at least 2 ladders");
             }
             if (direction) { // Jelly positions should be on one edge, and player position should be on the other
