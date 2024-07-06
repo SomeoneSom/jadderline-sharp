@@ -14,7 +14,7 @@
             if (ladders < 2) { // Because we calculate the jelly ladders in 2 regrab windows
                 throw new ArgumentException("Must calculate at least 2 ladders");
             }
-            if (direction) { // Jelly positions should be on one edge, and player position should be on the other
+            if (playerSpeed > 0f || (playerSpeed == 0f && direction)) { // Jelly positions should be on one edge, and player position should be on the other
                 jelly2Pos = float.Round(jelly2Pos) + 9.5f;
                 playerPos -= 4f;
             } else {
@@ -39,14 +39,19 @@
                 Parallel.For(0, 262144, j => {
                     results[j] = Eval(potential[j], playerPos, playerSpeed, jelly1Pos, jelly2Pos, direction);
                 });
-                int max = results.IndexOf(results.Max());
-                if (results[max] == float.NegativeInfinity) {
+                int max;
+                if (direction) {
+                    max = results.IndexOf(results.Max());
+                } else {
+                    max = results.IndexOf(results.Min());
+                }
+                if (results[max] == float.NegativeInfinity && results[max] == float.PositiveInfinity) {
                     throw new ArgumentException("Malformed input or impossible jelly ladder"); // Is this actually the right exception to use? No clue
                 }
                 inputs.Add(potential[max].Item1);
                 inputs.Add(potential[max].Item2);
                 (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max].Item1, playerPos, playerSpeed, jelly1Pos, direction); // Save the result of the chosen input
-                if (direction) { // Make jelly1 the new jelly2
+                if (playerSpeed > 0f || (playerSpeed == 0f && direction)) { // Make jelly1 the new jelly2
                     jelly2Pos = float.Round(jelly1Pos) + 13.5f;
                 } else {
                     jelly2Pos = float.Round(jelly1Pos) - 13.5f;
@@ -62,7 +67,7 @@
             (float playerPosNew, float playerSpeedNew, float jelly1PosNew) = MoveVars(inputs.Item1, playerPos, playerSpeed, jelly1Pos, direction);
             bool wentOver; // Went past jelly
             float jelly2PosNew; // New jelly2 position
-            if (playerSpeedNew > 0f) { // Also make jelly1 the new jelly2
+            if (playerSpeedNew > 0f || (playerSpeedNew == 0f && direction)) { // Also make jelly1 the new jelly2
                 wentOver = playerPosNew >= jelly2Pos;
                 jelly2PosNew = float.Round(jelly1PosNew) + 13.5f;
             } else {
@@ -71,18 +76,26 @@
             }
             jelly1PosNew = playerPosNew;
             if (wentOver) {
-                return float.NegativeInfinity;
+                if (direction) {
+                    return float.NegativeInfinity;
+                } else {
+                    return float.PositiveInfinity;
+                }
             }
             (playerPosNew, _, _) = MoveVars(inputs.Item2, playerPosNew, playerSpeedNew, jelly1PosNew, direction);  
-            if (playerSpeedNew > 0f) { // And again
+            if (playerSpeedNew > 0f || (playerSpeedNew == 0f && direction)) { // And again
                 wentOver = playerPosNew >= jelly2PosNew;
             } else {
                 wentOver = playerPosNew < jelly2PosNew;
             }
             if (wentOver) {
-                return float.NegativeInfinity;
+                if (direction) {
+                    return float.NegativeInfinity;
+                } else {
+                    return float.PositiveInfinity;
+                }
             } else {
-                return float.Abs(playerPosNew - playerPos);
+                return playerPosNew - playerPos;
             }
         }
 
@@ -115,25 +128,28 @@
                 frictionOverMax = FrictionOverMax;
                 max = 90f;
             }
+            float mult;
+            if (direction) {
+                mult = 1f;
+            } else {
+                mult = -1f;
+            }
             playerSpeed = float.Abs(playerSpeed);
             if (!input) { // Holding neutral
-                playerSpeed -= frictionNorm * DeltaTime;
-                if (playerSpeed < 0f) {
+                playerSpeed -= frictionNorm * DeltaTime * mult;
+                if (playerSpeed * mult < 0f) {
                     playerSpeed = 0f;
                 }
             } else if (playerSpeed <= max) { // Coming up to max speed
-                playerSpeed += frictionNorm * DeltaTime;
-                if (playerSpeed > max) {
+                playerSpeed += frictionNorm * DeltaTime * mult;
+                if (playerSpeed * mult > max) {
                     playerSpeed = max;
                 }
             } else { // Over max speed
-                playerSpeed -= frictionOverMax * DeltaTime;
-                if (playerSpeed < max) {
+                playerSpeed -= frictionOverMax * DeltaTime * mult;
+                if (playerSpeed * mult < max) {
                     playerSpeed = max;
                 }
-            }
-            if (!direction) { // Flip speed back if moving left
-                playerSpeed *= -1;
             }
             playerPos += playerSpeed * DeltaTime;
             return (playerPos, playerSpeed);
