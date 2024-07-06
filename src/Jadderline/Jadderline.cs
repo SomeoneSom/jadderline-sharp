@@ -6,7 +6,8 @@
         const float FrictionNormHold = FrictionNorm / 2;
         const float FrictionOverMaxHold = FrictionOverMax / 2;
 
-        public static void Run(float playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, int ladders, bool moveOnly, string additionalInputs) {
+        // Most inputs are self explanatory, though for direction, false is left and true is right
+        public static void Run(float playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, int ladders, bool direction, bool moveOnly, string additionalInputs) {
             Console.WriteLine("Test");
             return;
         }
