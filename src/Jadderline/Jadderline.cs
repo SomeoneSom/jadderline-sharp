@@ -7,10 +7,13 @@
         const float FrictionOverMaxHold = FrictionOverMax / 2;
 
         // Most inputs are self explanatory, though for direction, false is left and true is right
-        // Additionally, jelly1 is the one about to be grabbed, and jelly2 is the one on cooldown
+        // Additionally, jelly2 is the one on cooldown (jelly1 is the one about to be grabbed, and as such, doesnt need to be inputted)
         // The additional inputs may or may not need commas, not 100% sure
         // This doesnt go back a frame if an impossible frame is reached, but ive never seen it ever go back in jadderline so its not too much of a priority currently
-        public static void Run(float playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, int ladders, bool direction, bool moveOnly, string additionalInputs) {
+        public static string Run(float playerPos, float playerSpeed, float jelly2Pos, int ladders, bool direction, bool moveOnly, string additionalInputs) {
+            jelly2Pos = float.Round(jelly2Pos) + 9.5f; // Jelly positions should be on the right edge
+            playerPos -= 4f; // And the player position should be on the left edge
+            float jelly1Pos = playerPos; // Since this is the one we are about to grab
             List<bool[]> inputs = new List<bool[]>();
             for (int i = 0; i < ladders; i++) {
                 // Get all 512 candidates
@@ -18,16 +21,24 @@
                 for (int j = 0; j < 512; j++) {
                     potential.Add(ToBits(j));
                 }
-
+                List<float> results = new List<float>();
+                foreach (var inp in potential) {
+                    results.Add(Eval(inp, playerPos, playerSpeed, jelly1Pos, jelly2Pos, direction));
+                }
+                int max = results.IndexOf(results.Max());
+                if (results[max] == float.NegativeInfinity) {
+                    throw new ArgumentException("Malformed input or impossible jelly ladder"); // Is this actually the right exception to use? No clue
+                }
+                inputs.Add(potential[max]);
             }
-            return;
+            return Format(inputs, moveOnly, additionalInputs);
         }
 
         // Gets the distance jelly1 has moved while ensuring the player can still grab jelly2
         private static float Eval(bool[] inputs, float playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, bool direction) {
             (float playerPosNew, float playerSpeedNew, float jelly1PosNew) = MoveVars(inputs, playerPos, playerSpeed, jelly1Pos, direction);
-            if (float.Abs(playerPosNew) > float.Abs(jelly2Pos)) { // Went past jelly (> is >= in the rust ver, idk why)
-                return float.PositiveInfinity;
+            if (float.Abs(playerPosNew) >= float.Abs(jelly2Pos)) { // Went past jelly
+                return float.NegativeInfinity;
             } else {
                 return float.Abs(jelly1PosNew - jelly1Pos); // We want to maximize this and not player movement in order to prioritize 13px jadders when possible
                                                             // (though the rust ver maximizes player movement so idk)
@@ -98,7 +109,7 @@
         }
 
         // Formats the inputs to be copy and pasted into Studio
-        private static string Format(bool moveOnly, string additionalInputs) {
+        private static string Format(List<bool[]> inputs, bool moveOnly, string additionalInputs) {
             return "";
         }
     }

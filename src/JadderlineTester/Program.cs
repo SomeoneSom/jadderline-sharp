@@ -7,8 +7,6 @@ class Program {
         float playerPos = float.Parse(Console.ReadLine());
         Console.Write("playerSpeed: ");
         float playerSpeed = float.Parse(Console.ReadLine());
-        Console.Write("jelly1Pos: ");
-        float jelly1Pos = float.Parse(Console.ReadLine());
         Console.Write("jelly2Pos: ");
         float jelly2Pos = float.Parse(Console.ReadLine());
         Console.Write("ladders: "); 
@@ -19,6 +17,6 @@ class Program {
         bool moveOnly = bool.Parse(Console.ReadLine());
         Console.Write("additionalInputs: ");
         string additionalInputs = Console.ReadLine() ?? "";
-        Jadderline.Jadderline.Run(playerPos, playerSpeed, jelly1Pos, jelly2Pos, ladders, direction, moveOnly, additionalInputs);
+        Console.WriteLine(Jadderline.Jadderline.Run(playerPos, playerSpeed, jelly2Pos, ladders, direction, moveOnly, additionalInputs));
     }
 }
