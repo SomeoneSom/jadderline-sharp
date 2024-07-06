@@ -11,17 +11,22 @@
         // The additional inputs may or may not need commas, not 100% sure
         // This doesnt go back a frame if an impossible frame is reached, but ive never seen it ever go back in jadderline so its not too much of a priority currently
         public static string Run(float playerPos, float playerSpeed, float jelly2Pos, int ladders, bool direction, bool moveOnly, string additionalInputs) {
-            jelly2Pos = float.Round(jelly2Pos) + 9.5f; // Jelly positions should be on the right edge
-            playerPos -= 4f; // And the player position should be on the left edge
+            if (direction) { // Jelly positions should be on one edge, and player position should be on the other
+                jelly2Pos = float.Round(jelly2Pos) + 9.5f;
+                playerPos -= 4f;
+            } else {
+                jelly2Pos = float.Round(jelly2Pos) - 10.5f;
+                playerPos += 3f;
+            }
             float jelly1Pos = playerPos; // Since this is the one we are about to grab
-            List<bool[]> inputs = new List<bool[]>();
+            List<bool[]> inputs = new();
             for (int i = 0; i < ladders; i++) {
                 // Get all 512 candidates
-                List<bool[]> potential = new List<bool[]>();
+                List<bool[]> potential = new();
                 for (int j = 0; j < 512; j++) {
                     potential.Add(ToBits(j));
                 }
-                List<float> results = new List<float>();
+                List<float> results = new();
                 foreach (var inp in potential) {
                     results.Add(Eval(inp, playerPos, playerSpeed, jelly1Pos, jelly2Pos, direction));
                 }
@@ -31,7 +36,11 @@
                 }
                 inputs.Add(potential[max]);
                 (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max], playerPos, playerSpeed, jelly1Pos, direction); // save the result of the chosen input
-                jelly2Pos = float.Round(jelly1Pos) + 13.5f; // Make jelly1 the new jelly2
+                if (direction) { // Make jelly1 the new jelly2
+                    jelly2Pos = float.Round(jelly1Pos) + 13.5f;
+                } else {
+                    jelly2Pos = float.Round(jelly1Pos) - 13.5f;
+                }
                 jelly1Pos = playerPos;
             }
             return Format(inputs, moveOnly, direction, additionalInputs);
@@ -39,12 +48,17 @@
 
         // Gets the distance jelly1 has moved while ensuring the player can still grab jelly2
         private static float Eval(bool[] inputs, float playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, bool direction) {
-            (float playerPosNew, float playerSpeedNew, float jelly1PosNew) = MoveVars(inputs, playerPos, playerSpeed, jelly1Pos, direction);
-            if (float.Abs(playerPosNew) >= float.Abs(jelly2Pos)) { // Went past jelly   
+            (float playerPosNew, float _, float _) = MoveVars(inputs, playerPos, playerSpeed, jelly1Pos, direction);
+            bool wentOver; // Went past jelly   
+            if (direction) {
+                wentOver = playerPosNew >= jelly2Pos;
+            } else {
+                wentOver = playerPosNew < jelly2Pos;
+            }
+            if (wentOver) {
                 return float.NegativeInfinity;
             } else {
-                return float.Abs(jelly1PosNew - jelly1Pos); // We want to maximize this and not player movement in order to prioritize 13px jadders when possible
-                                                            // (though the rust ver maximizes player movement so idk)
+                return float.Abs(playerPosNew - playerPos); // May unprioritize 12.5px jadders, but I think I would need to make it choose 2 frames at a time for that
             }
         }
 
@@ -120,12 +134,16 @@
             } else {
                 dirString = "L";
             }
+            string mString;
             if (moveOnly) {
-                dirString = "M" + dirString;
+                mString = "M";
+            } else {
+                mString = "";
             }
             foreach (var input in inputs) {
-                List<(int, bool)> formatted = new List<(int, bool)>();
-                formatted.Add((13, false));
+                List<(int, bool)> formatted = new() {
+                    (13, false)
+                };
                 for (int i = 0; i < 8; i++) {
                     int last = formatted.Count - 1;
                     if (formatted[last].Item2 == input[i]) {
@@ -136,21 +154,15 @@
                 }
                 foreach (var f in formatted) {
                     if (f.Item2) {
-                        result += $"{f.Item1}G{additionalInputs}{dirString}\n";
+                        result += $"{f.Item1}G{additionalInputs}{mString}{dirString}\n";
                     } else {
                         result += $"{f.Item1}G{additionalInputs}\n";
                     }
                 }
-                string downString;
-                if (moveOnly) {
-                    downString = "MD";
-                } else {
-                    downString = "D";
-                }
                 if (input[8]) {
-                    result += $"1{additionalInputs}{dirString}{downString}\n";
+                    result += $"1{additionalInputs}{mString}{dirString}D\n";
                 } else {
-                    result += $"1{additionalInputs}{downString}\n";
+                    result += $"1{additionalInputs}{mString}D\n";
                 }
             }
             return result;
