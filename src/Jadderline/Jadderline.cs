@@ -11,6 +11,9 @@
         // The additional inputs may or may not need commas, not 100% sure
         // This doesnt go back a frame if an impossible frame is reached, but ive never seen it ever go back in jadderline so its not too much of a priority currently
         public static string Run(float playerPos, float playerSpeed, float jelly2Pos, int ladders, bool direction, bool moveOnly, string additionalInputs) {
+            if (ladders < 2) {
+                throw new ArgumentException("Must calculate at least 2 ladders");
+            }
             if (direction) { // Jelly positions should be on one edge, and player position should be on the other
                 jelly2Pos = float.Round(jelly2Pos) + 9.5f;
                 playerPos -= 4f;
@@ -36,7 +39,7 @@
                     throw new ArgumentException("Malformed input or impossible jelly ladder"); // Is this actually the right exception to use? No clue
                 }
                 inputs.Add(potential[max]);
-                (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max], playerPos, playerSpeed, jelly1Pos, direction); // save the result of the chosen input
+                (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max], playerPos, playerSpeed, jelly1Pos, direction); // Save the result of the chosen input
                 if (direction) { // Make jelly1 the new jelly2
                     jelly2Pos = float.Round(jelly1Pos) + 13.5f;
                 } else {
