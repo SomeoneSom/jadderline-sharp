@@ -1,6 +1,6 @@
 ﻿namespace Jadderline {
     public class Jadderline {
-        const float DeltaTime = 0.166667f;
+        const float DeltaTime = 0.0166667f;
         const float FrictionNorm = 650f;
         const float FrictionOverMax = 260f;
         const float FrictionNormHold = FrictionNorm / 2;
@@ -30,14 +30,17 @@
                     throw new ArgumentException("Malformed input or impossible jelly ladder"); // Is this actually the right exception to use? No clue
                 }
                 inputs.Add(potential[max]);
+                (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max], playerPos, playerSpeed, jelly1Pos, direction); // save the result of the chosen input
+                jelly2Pos = float.Round(jelly1Pos) + 13.5f; // Make jelly1 the new jelly2
+                jelly1Pos = playerPos;
             }
-            return Format(inputs, moveOnly, additionalInputs);
+            return Format(inputs, moveOnly, direction, additionalInputs);
         }
 
         // Gets the distance jelly1 has moved while ensuring the player can still grab jelly2
         private static float Eval(bool[] inputs, float playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, bool direction) {
             (float playerPosNew, float playerSpeedNew, float jelly1PosNew) = MoveVars(inputs, playerPos, playerSpeed, jelly1Pos, direction);
-            if (float.Abs(playerPosNew) >= float.Abs(jelly2Pos)) { // Went past jelly
+            if (float.Abs(playerPosNew) >= float.Abs(jelly2Pos)) { // Went past jelly   
                 return float.NegativeInfinity;
             } else {
                 return float.Abs(jelly1PosNew - jelly1Pos); // We want to maximize this and not player movement in order to prioritize 13px jadders when possible
@@ -109,8 +112,48 @@
         }
 
         // Formats the inputs to be copy and pasted into Studio
-        private static string Format(List<bool[]> inputs, bool moveOnly, string additionalInputs) {
-            return "";
+        private static string Format(List<bool[]> inputs, bool moveOnly, bool direction, string additionalInputs) {
+            string result = "";
+            string dirString;
+            if (direction) {
+                dirString = "R";
+            } else {
+                dirString = "L";
+            }
+            if (moveOnly) {
+                dirString = "M" + dirString;
+            }
+            foreach (var input in inputs) {
+                List<(int, bool)> formatted = new List<(int, bool)>();
+                formatted.Add((13, false));
+                for (int i = 0; i < 8; i++) {
+                    int last = formatted.Count - 1;
+                    if (formatted[last].Item2 == input[i]) {
+                        formatted[last] = (formatted[last].Item1 + 1, input[i]);
+                    } else {
+                        formatted.Add((1, input[i]));
+                    }
+                }
+                foreach (var f in formatted) {
+                    if (f.Item2) {
+                        result += $"{f.Item1}G{additionalInputs}{dirString}\n";
+                    } else {
+                        result += $"{f.Item1}G{additionalInputs}\n";
+                    }
+                }
+                string downString;
+                if (moveOnly) {
+                    downString = "MD";
+                } else {
+                    downString = "D";
+                }
+                if (input[8]) {
+                    result += $"1{additionalInputs}{dirString}{downString}\n";
+                } else {
+                    result += $"1{additionalInputs}{downString}\n";
+                }
+            }
+            return result;
         }
     }
 }
