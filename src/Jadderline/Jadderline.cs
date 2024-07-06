@@ -24,22 +24,28 @@
             float jelly1Pos = playerPos; // Since this is the one we are about to grab
             List<bool[]> inputs = new();
             for (int i = 0; i < ladders; i++) {
-                // Get all 512 candidates
-                List<bool[]> potential = new();
-                List<float> results = new(); // Initializing this array makes multithreading work
-                for (int j = 0; j < 512; j++) {
-                    potential.Add(ToBits(j));
-                    results.Add(0f);
+                // Remove last entry since we arent at the end yet
+                if (inputs.Count != 0) {
+                    inputs.RemoveAt(inputs.Count - 1);
                 }
-                Parallel.For(0, 512, j => {
+                // Get all 262144 candidates
+                List<(bool[], bool[])> potential = new();
+                for (int j = 0; j < 512; j++) {
+                    for (int k = 0; k < 512; k++) {
+                        potential.Add((ToBits(j), ToBits(k)));
+                    }
+                }
+                List<float> results = new(new float[262144]); // Initializing this array makes multithreading work
+                Parallel.For(0, 262144, j => {
                     results[j] = Eval(potential[j], playerPos, playerSpeed, jelly1Pos, jelly2Pos, direction);
                 });
                 int max = results.IndexOf(results.Max());
                 if (results[max] == float.NegativeInfinity) {
                     throw new ArgumentException("Malformed input or impossible jelly ladder"); // Is this actually the right exception to use? No clue
                 }
-                inputs.Add(potential[max]);
-                (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max], playerPos, playerSpeed, jelly1Pos, direction); // Save the result of the chosen input
+                inputs.Add(potential[max].Item1);
+                inputs.Add(potential[max].Item2);
+                (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max].Item1, playerPos, playerSpeed, jelly1Pos, direction); // Save the result of the chosen input
                 if (direction) { // Make jelly1 the new jelly2
                     jelly2Pos = float.Round(jelly1Pos) + 13.5f;
                 } else {
@@ -51,19 +57,32 @@
         }
 
         // Gets the distance jelly1 has moved while ensuring the player can still grab jelly2
-        private static float Eval(bool[] inputs, float playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, bool direction) {
-            (float playerPosNew, float _, float _) = MoveVars(inputs, playerPos, playerSpeed, jelly1Pos, direction);
-            bool wentOver; // Went past jelly   
-            if (direction) {
+        // Yes this code does kind of suck but it works
+        private static float Eval((bool[], bool[]) inputs, float playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, bool direction) {
+            (float playerPosNew, float playerSpeedNew, float jelly1PosNew) = MoveVars(inputs.Item1, playerPos, playerSpeed, jelly1Pos, direction);
+            bool wentOver; // Went past jelly
+            float jelly2PosNew; // New jelly2 position
+            if (direction) { // Also make jelly1 the new jelly2
                 wentOver = playerPosNew >= jelly2Pos;
+                jelly2PosNew = float.Round(jelly1PosNew) + 13.5f;
             } else {
                 wentOver = playerPosNew < jelly2Pos;
+                jelly2PosNew = float.Round(jelly1PosNew) - 13.5f;
+            }
+            jelly1PosNew = playerPosNew;
+            if (wentOver) {
+                return float.NegativeInfinity;
+            }
+            (playerPosNew, _, _) = MoveVars(inputs.Item2, playerPosNew, playerSpeedNew, jelly1PosNew, direction);  
+            if (direction) { // And again
+                wentOver = playerPosNew >= jelly2PosNew;
+            } else {
+                wentOver = playerPosNew < jelly2PosNew;
             }
             if (wentOver) {
                 return float.NegativeInfinity;
             } else {
-                return float.Abs(playerPosNew - playerPos); // May unprioritize 12.5px jadders, but I think I would need to make it choose 2 frames at a time for that
-                                                            // It seems to do 12px jadders, but as 13px and then 11px, which probably mean I do in fact need to make it do 2 at a time eventually
+                return float.Abs(playerPosNew - playerPos);
             }
         }
 
