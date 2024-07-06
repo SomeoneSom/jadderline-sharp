@@ -22,21 +22,20 @@
                 playerPos += 3f;
             }
             float jelly1Pos = playerPos; // Since this is the one we are about to grab
+            // Get all 262144 candidates for inputs
+            List<(bool[], bool[])> potential = new();
+            for (int j = 0; j < 512; j++) {
+                for (int k = 0; k < 512; k++) {
+                    potential.Add((ToBits(j), ToBits(k)));
+                }
+            }
+            List<float> results = new(new float[262144]);
             List<bool[]> inputs = new();
             for (int i = 0; i < ladders; i++) {
                 // Remove last entry since we arent at the end yet
                 if (inputs.Count != 0) {
                     inputs.RemoveAt(inputs.Count - 1);
                 }
-                // Get all 262144 candidates
-                // Best speed optimization would probably be not using bool arrays, but I cba to do that right now, and its fast enough for now
-                List<(bool[], bool[])> potential = new();
-                for (int j = 0; j < 512; j++) {
-                    for (int k = 0; k < 512; k++) {
-                        potential.Add((ToBits(j), ToBits(k)));
-                    }
-                }
-                List<float> results = new(new float[262144]); // Initializing this array makes multithreading work
                 Parallel.For(0, 262144, j => {
                     results[j] = Eval(potential[j], playerPos, playerSpeed, jelly1Pos, jelly2Pos, direction);
                 });
