@@ -62,7 +62,7 @@
             (float playerPosNew, float playerSpeedNew, float jelly1PosNew) = MoveVars(inputs.Item1, playerPos, playerSpeed, jelly1Pos, direction);
             bool wentOver; // Went past jelly
             float jelly2PosNew; // New jelly2 position
-            if (direction) { // Also make jelly1 the new jelly2
+            if (playerSpeedNew > 0f) { // Also make jelly1 the new jelly2
                 wentOver = playerPosNew >= jelly2Pos;
                 jelly2PosNew = float.Round(jelly1PosNew) + 13.5f;
             } else {
@@ -74,7 +74,7 @@
                 return float.NegativeInfinity;
             }
             (playerPosNew, _, _) = MoveVars(inputs.Item2, playerPosNew, playerSpeedNew, jelly1PosNew, direction);  
-            if (direction) { // And again
+            if (playerSpeedNew > 0f) { // And again
                 wentOver = playerPosNew >= jelly2PosNew;
             } else {
                 wentOver = playerPosNew < jelly2PosNew;
