@@ -6,9 +6,13 @@
         const float FrictionNormHold = FrictionNorm / 2;
         const float FrictionOverMaxHold = FrictionOverMax / 2;
 
-        public static void Run() {
+        public static void Run(float playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, int ladders, bool moveOnly, string additionalInputs) {
             Console.WriteLine("Test");
             return;
+        }
+
+        private static string Format() {
+            return "";
         }
     }
 }
