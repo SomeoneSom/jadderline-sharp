@@ -23,13 +23,14 @@
             for (int i = 0; i < ladders; i++) {
                 // Get all 512 candidates
                 List<bool[]> potential = new();
+                List<float> results = new(); // Initializing this array makes multithreading work
                 for (int j = 0; j < 512; j++) {
                     potential.Add(ToBits(j));
+                    results.Add(0f);
                 }
-                List<float> results = new();
-                foreach (var inp in potential) {
-                    results.Add(Eval(inp, playerPos, playerSpeed, jelly1Pos, jelly2Pos, direction));
-                }
+                Parallel.For(0, 512, j => {
+                    results[j] = Eval(potential[j], playerPos, playerSpeed, jelly1Pos, jelly2Pos, direction);
+                });
                 int max = results.IndexOf(results.Max());
                 if (results[max] == float.NegativeInfinity) {
                     throw new ArgumentException("Malformed input or impossible jelly ladder"); // Is this actually the right exception to use? No clue
