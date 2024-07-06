@@ -59,6 +59,7 @@
                 return float.NegativeInfinity;
             } else {
                 return float.Abs(playerPosNew - playerPos); // May unprioritize 12.5px jadders, but I think I would need to make it choose 2 frames at a time for that
+                                                            // It seems to do 12px jadders, but as 13px and then 11px, which probably mean I do in fact need to make it do 2 at a time eventually
             }
         }
 
@@ -165,6 +166,8 @@
                     result += $"1{additionalInputs}{mString}D\n";
                 }
             }
+            // Copy to clipboard (for easy insertion)
+            TextCopy.ClipboardService.SetText(result);
             return result;
         }
     }
