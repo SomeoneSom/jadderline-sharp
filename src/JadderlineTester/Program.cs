@@ -4,7 +4,7 @@ class Program {
     // This is mainly just for making sure this C# port works
     static void Main(string[] args) {
         Console.Write("playerPos: ");
-        float playerPos = float.Parse(Console.ReadLine());
+        double playerPos = double.Parse(Console.ReadLine());
         Console.Write("playerSpeed: ");
         float playerSpeed = float.Parse(Console.ReadLine());
         Console.Write("jelly2Pos: ");

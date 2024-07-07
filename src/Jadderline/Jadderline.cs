@@ -1,20 +1,20 @@
 ﻿namespace Jadderline {
     public class Jadderline {
         const float DeltaTime = 0.0166667f;
-        const float FrictionNorm = 650f;
-        const float FrictionOverMax = 260f;
-        const float FrictionNormHold = FrictionNorm / 2;
-        const float FrictionOverMaxHold = FrictionOverMax / 2;
+        const float FrictionNorm = (float)((double)1000f * (double)0.65f);
+        const float FrictionOverMax = (float)((double)400f * (double)0.65f);
+        const float FrictionNormHold = FrictionNorm * 0.5f;
+        const float FrictionOverMaxHold = FrictionOverMax * 0.5f;
 
         // Most inputs are self explanatory, though for direction, false is left and true is right
         // Additionally, jelly2 is the one on cooldown (jelly1 is the one about to be grabbed, and as such, doesnt need to be inputted)
         // The additional inputs may or may not need commas, not 100% sure
         // This doesnt go back a frame if an impossible frame is reached, but ive never seen it ever go back in jadderline so its not too much of a priority currently
-        public static string Run(float playerPos, float playerSpeed, float jelly2Pos, int ladders, bool direction, bool moveOnly, string additionalInputs) {
+        public static string Run(double playerPos, float playerSpeed, float jelly2Pos, int ladders, bool direction, bool moveOnly, string additionalInputs) {
             if (ladders < 2) { // Because we calculate the jelly ladders in 2 regrab windows
                 throw new ArgumentException("Must calculate at least 2 ladders");
             }
-            float jelly1Pos = playerPos; // Since this is the one we are about to grab
+            float jelly1Pos = (float)playerPos; // Since this is the one we are about to grab
             // Get all 262144 candidates for inputs
             List<(bool[], bool[])> potential = new();
             for (int j = 0; j < 512; j++) {
@@ -28,6 +28,10 @@
                 // Remove last entry if needed for parity
                 if (ladders - i == 1) {
                     inputs.RemoveAt(inputs.Count - 1);
+                } else if (inputs.Count != 0) { // Only run this now to account for the above case
+                    (playerPos, playerSpeed, jelly1Pos) = MoveVars(inputs[inputs.Count - 1], playerPos, playerSpeed, jelly1Pos, direction);
+                    jelly2Pos = float.Round(jelly1Pos) + jelly2Pos - float.Truncate(jelly2Pos);
+                    jelly1Pos = (float)playerPos;
                 }
                 Parallel.For(0, 262144, j => {
                     results[j] = Eval(potential[j], playerPos, playerSpeed, jelly1Pos, jelly2Pos, direction);
@@ -45,25 +49,18 @@
                 inputs.Add(potential[max].Item2);
                 (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max].Item1, playerPos, playerSpeed, jelly1Pos, direction); // Save the result of the chosen input
                 jelly2Pos = float.Round(jelly1Pos); // Make jelly1 the new jelly2
-                jelly1Pos = playerPos;
-                Console.WriteLine("{0:N12}", playerPos);
-                Console.WriteLine("{0:N12}", jelly2Pos);
-                (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max].Item2, playerPos, playerSpeed, jelly1Pos, direction); // Save the result of the chosen input
-                jelly2Pos = float.Round(jelly1Pos) + jelly2Pos - float.Truncate(jelly2Pos); // Make jelly1 the new jelly2
-                jelly1Pos = float.Round(playerPos);
-                Console.WriteLine("{0:N12}", playerPos);
-                Console.WriteLine("{0:N12}", jelly2Pos);
+                jelly1Pos = (float)playerPos;
             }
             return Format(inputs, moveOnly, direction, additionalInputs);
         }
 
         // Gets the distance jelly1 has moved while ensuring the player can still grab jelly2
         // Yes this code does kind of suck but it works
-        private static float Eval((bool[], bool[]) inputs, float playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, bool direction) {
-            (float playerPosNew, float playerSpeedNew, float jelly1PosNew) = MoveVars(inputs.Item1, playerPos, playerSpeed, jelly1Pos, direction);
+        private static float Eval((bool[], bool[]) inputs, double playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, bool direction) {
+            (double playerPosNew, float playerSpeedNew, float jelly1PosNew) = MoveVars(inputs.Item1, playerPos, playerSpeed, jelly1Pos, direction);
             bool wentOver; // Went past jelly
             float jelly2PosNew = float.Round(jelly1PosNew); // New jelly2 position
-            jelly1PosNew = playerPosNew;
+            jelly1PosNew = (float)playerPosNew;
             if (playerPosNew >= jelly2Pos + 13.5f || playerPosNew < jelly2Pos - 13.5f) {
                 if (direction) {
                     return float.NegativeInfinity;
@@ -79,12 +76,12 @@
                     return float.PositiveInfinity;
                 }
             } else {
-                return playerPosNew - playerPos;
+                return (float)(playerPosNew - playerPos);
             }
         }
 
         // Actually calculates the inputs
-        private static (float, float, float) MoveVars(bool[] inputs, float playerPos, float playerSpeed, float jelly1Pos, bool direction) {
+        private static (double, float, float) MoveVars(bool[] inputs, double playerPos, float playerSpeed, float jelly1Pos, bool direction) {
             // Frame of movement on last frame of StPickup
             playerPos += playerSpeed * DeltaTime;
             // 8 frames of holding the jelly
@@ -92,21 +89,21 @@
                 (playerPos, playerSpeed) = MoveStep(inputs[i], playerPos, playerSpeed, true, direction);
             }
             // Release jelly1, which will be at the player's current positition when dropped
-            jelly1Pos = playerPos;
+            jelly1Pos = (float)playerPos;
             // Frame of movement when you release the jelly
             (playerPos, playerSpeed) = MoveStep(inputs[8], playerPos, playerSpeed, false, direction);
             return (playerPos, playerSpeed, jelly1Pos);
         }
 
         // Calculates one frame of movement
-        private static (float, float) MoveStep(bool input, float playerPos, float playerSpeed, bool holding, bool direction) {
+        private static (double, float) MoveStep(bool input, double playerPos, float playerSpeed, bool holding, bool direction) {
             float frictionNorm;
             float frictionOverMax;
             float max;
             if (holding) {
                 frictionNorm = FrictionNormHold;
                 frictionOverMax = FrictionOverMaxHold;
-                max = 108f;
+                max = 108.00001f;
             } else {
                 frictionNorm = FrictionNorm;
                 frictionOverMax = FrictionOverMax;
