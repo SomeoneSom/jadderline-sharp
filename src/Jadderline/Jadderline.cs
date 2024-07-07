@@ -24,9 +24,9 @@
             }
             List<float> results = new(new float[262144]);
             List<bool[]> inputs = new();
-            for (int i = 0; i < ladders; i++) {
-                // Remove last entry since we arent at the end yet
-                if (inputs.Count != 0) {
+            for (int i = 0; i < ladders; i += 2) {
+                // Remove last entry if needed for parity
+                if (ladders - i == 1) {
                     inputs.RemoveAt(inputs.Count - 1);
                 }
                 Parallel.For(0, 262144, j => {
@@ -46,6 +46,13 @@
                 (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max].Item1, playerPos, playerSpeed, jelly1Pos, direction); // Save the result of the chosen input
                 jelly2Pos = float.Round(jelly1Pos); // Make jelly1 the new jelly2
                 jelly1Pos = playerPos;
+                Console.WriteLine("{0:N12}", playerPos);
+                Console.WriteLine("{0:N12}", jelly2Pos);
+                (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max].Item2, playerPos, playerSpeed, jelly1Pos, direction); // Save the result of the chosen input
+                jelly2Pos = float.Round(jelly1Pos) + jelly2Pos - float.Truncate(jelly2Pos); // Make jelly1 the new jelly2
+                jelly1Pos = float.Round(playerPos);
+                Console.WriteLine("{0:N12}", playerPos);
+                Console.WriteLine("{0:N12}", jelly2Pos);
             }
             return Format(inputs, moveOnly, direction, additionalInputs);
         }
@@ -146,9 +153,9 @@
             string result = "";
             string dirString;
             if (direction) {
-                dirString = "R";
+                dirString = ",R";
             } else {
-                dirString = "L";
+                dirString = ",L";
             }
             string mString;
             if (moveOnly) {
@@ -170,15 +177,15 @@
                 }
                 foreach (var f in formatted) {
                     if (f.Item2) {
-                        result += $"{f.Item1}G{additionalInputs}{mString}{dirString}\n";
+                        result += $"{f.Item1},G{additionalInputs}{mString}{dirString}\n";
                     } else {
-                        result += $"{f.Item1}G{additionalInputs}\n";
+                        result += $"{f.Item1},G{additionalInputs}\n";
                     }
                 }
                 if (input[8]) {
-                    result += $"1{additionalInputs}{mString}{dirString}D\n";
+                    result += $"1{additionalInputs}{mString}{dirString},D\n";
                 } else {
-                    result += $"1{additionalInputs}{mString}D\n";
+                    result += $"1{additionalInputs}{mString},D\n";
                 }
             }
             // Copy to clipboard (for easy insertion)
