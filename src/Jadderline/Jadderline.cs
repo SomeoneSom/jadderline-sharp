@@ -14,13 +14,6 @@
             if (ladders < 2) { // Because we calculate the jelly ladders in 2 regrab windows
                 throw new ArgumentException("Must calculate at least 2 ladders");
             }
-            if (playerSpeed > 0f || (playerSpeed == 0f && direction)) { // Jelly positions should be on one edge, and player position should be on the other
-                jelly2Pos = float.Round(jelly2Pos) + 9.5f;
-                playerPos -= 4f;
-            } else {
-                jelly2Pos = float.Round(jelly2Pos) - 10.5f;
-                playerPos += 3f;
-            }
             float jelly1Pos = playerPos; // Since this is the one we are about to grab
             // Get all 262144 candidates for inputs
             List<(bool[], bool[])> potential = new();
@@ -51,11 +44,7 @@
                 inputs.Add(potential[max].Item1);
                 inputs.Add(potential[max].Item2);
                 (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max].Item1, playerPos, playerSpeed, jelly1Pos, direction); // Save the result of the chosen input
-                if (playerSpeed > 0f || (playerSpeed == 0f && direction)) { // Make jelly1 the new jelly2
-                    jelly2Pos = float.Round(jelly1Pos) + 13.5f;
-                } else {
-                    jelly2Pos = float.Round(jelly1Pos) - 13.5f;
-                }
+                jelly2Pos = float.Round(jelly1Pos); // Make jelly1 the new jelly2
                 jelly1Pos = playerPos;
             }
             return Format(inputs, moveOnly, direction, additionalInputs);
@@ -66,16 +55,9 @@
         private static float Eval((bool[], bool[]) inputs, float playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, bool direction) {
             (float playerPosNew, float playerSpeedNew, float jelly1PosNew) = MoveVars(inputs.Item1, playerPos, playerSpeed, jelly1Pos, direction);
             bool wentOver; // Went past jelly
-            float jelly2PosNew; // New jelly2 position
-            if (playerSpeedNew > 0f || (playerSpeedNew == 0f && direction)) { // Also make jelly1 the new jelly2
-                wentOver = playerPosNew >= jelly2Pos;
-                jelly2PosNew = float.Round(jelly1PosNew) + 13.5f;
-            } else {
-                wentOver = playerPosNew < jelly2Pos;
-                jelly2PosNew = float.Round(jelly1PosNew) - 13.5f;
-            }
+            float jelly2PosNew = float.Round(jelly1PosNew); // New jelly2 position
             jelly1PosNew = playerPosNew;
-            if (wentOver) {
+            if (playerPosNew >= jelly2Pos + 13.5f || playerPosNew < jelly2Pos - 13.5f) {
                 if (direction) {
                     return float.NegativeInfinity;
                 } else {
@@ -83,12 +65,7 @@
                 }
             }
             (playerPosNew, _, _) = MoveVars(inputs.Item2, playerPosNew, playerSpeedNew, jelly1PosNew, direction);  
-            if (playerSpeedNew > 0f || (playerSpeedNew == 0f && direction)) { // And again
-                wentOver = playerPosNew >= jelly2PosNew;
-            } else {
-                wentOver = playerPosNew < jelly2PosNew;
-            }
-            if (wentOver) {
+            if (playerPosNew >= jelly2PosNew + 13.5f || playerPosNew < jelly2PosNew - 13.5f) {
                 if (direction) {
                     return float.NegativeInfinity;
                 } else {
@@ -134,21 +111,20 @@
             } else {
                 mult = -1f;
             }
-            playerSpeed = float.Abs(playerSpeed);
             if (!input) { // Holding neutral
                 playerSpeed -= frictionNorm * DeltaTime * mult;
                 if (playerSpeed * mult < 0f) {
                     playerSpeed = 0f;
                 }
-            } else if (playerSpeed <= max) { // Coming up to max speed
+            } else if (playerSpeed * mult <= max) { // Coming up to max speed
                 playerSpeed += frictionNorm * DeltaTime * mult;
                 if (playerSpeed * mult > max) {
-                    playerSpeed = max;
+                    playerSpeed = max * mult;
                 }
             } else { // Over max speed
                 playerSpeed -= frictionOverMax * DeltaTime * mult;
                 if (playerSpeed * mult < max) {
-                    playerSpeed = max;
+                    playerSpeed = max * mult;
                 }
             }
             playerPos += playerSpeed * DeltaTime;
