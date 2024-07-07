@@ -58,7 +58,6 @@
         // Yes this code does kind of suck but it works
         private static float Eval((bool[], bool[]) inputs, double playerPos, float playerSpeed, float jelly1Pos, float jelly2Pos, bool direction) {
             (double playerPosNew, float playerSpeedNew, float jelly1PosNew) = MoveVars(inputs.Item1, playerPos, playerSpeed, jelly1Pos, direction);
-            bool wentOver; // Went past jelly
             float jelly2PosNew = float.Round(jelly1PosNew); // New jelly2 position
             jelly1PosNew = (float)playerPosNew;
             if (playerPosNew >= jelly2Pos + 13.5f || playerPosNew < jelly2Pos - 13.5f) {
