@@ -1,16 +1,17 @@
 ﻿namespace Jadderline {
     public class Jadderline {
         const float DeltaTime = 0.0166667f;
-        const float FrictionNorm = (float)((double)1000f * (double)0.65f);
-        const float FrictionOverMax = (float)((double)400f * (double)0.65f);
-        const float FrictionNormHold = FrictionNorm * 0.5f;
-        const float FrictionOverMaxHold = FrictionOverMax * 0.5f;
+        const float FrictionNorm = (float)((double)1000f * (double)0.65f * (double)DeltaTime);
+        const float FrictionOverMax = (float)((double)400f * (double)0.65f * (double)DeltaTime);
+        const float FrictionNormHold = (float)((double)1000f * (double)(0.65f * 0.5f) * (double)DeltaTime);
+        const float FrictionOverMaxHold = (float)((double)400f * (double)(0.65f * 0.5f) * (double)DeltaTime);
 
         // Most inputs are self explanatory, though for direction, false is left and true is right
         // Additionally, jelly2 is the one on cooldown (jelly1 is the one about to be grabbed, and as such, doesnt need to be inputted)
         // The additional inputs may or may not need commas, not 100% sure
         // This doesnt go back a frame if an impossible frame is reached, but ive never seen it ever go back in jadderline so its not too much of a priority currently
         public static string Run(double playerPos, float playerSpeed, float jelly2Pos, int ladders, bool direction, bool moveOnly, string additionalInputs) {
+            Console.WriteLine("{0:N12}", playerPos);
             if (ladders < 2) { // Because we calculate the jelly ladders in 2 regrab windows
                 throw new ArgumentException("Must calculate at least 2 ladders");
             }
@@ -30,6 +31,8 @@
                     inputs.RemoveAt(inputs.Count - 1);
                 } else if (inputs.Count != 0) { // Only run this now to account for the above case
                     (playerPos, playerSpeed, jelly1Pos) = MoveVars(inputs[inputs.Count - 1], playerPos, playerSpeed, jelly1Pos, direction);
+                    Console.WriteLine("{0:N12}", playerPos);
+                    Console.WriteLine("{0:N12}", playerSpeed);
                     jelly2Pos = float.Round(jelly1Pos) + jelly2Pos - float.Truncate(jelly2Pos);
                     jelly1Pos = (float)playerPos;
                 }
@@ -48,6 +51,8 @@
                 inputs.Add(potential[max].Item1);
                 inputs.Add(potential[max].Item2);
                 (playerPos, playerSpeed, jelly1Pos) = MoveVars(potential[max].Item1, playerPos, playerSpeed, jelly1Pos, direction); // Save the result of the chosen input
+                Console.WriteLine("{0:N12}", playerPos);
+                Console.WriteLine("{0:N12}", playerSpeed);
                 jelly2Pos = float.Round(jelly1Pos); // Make jelly1 the new jelly2
                 jelly1Pos = (float)playerPos;
             }
@@ -115,17 +120,17 @@
                 mult = -1f;
             }
             if (!input) { // Holding neutral
-                playerSpeed -= frictionNorm * DeltaTime * mult;
+                playerSpeed -= frictionNorm * mult;
                 if (playerSpeed * mult < 0f) {
                     playerSpeed = 0f;
                 }
             } else if (playerSpeed * mult <= max) { // Coming up to max speed
-                playerSpeed += frictionNorm * DeltaTime * mult;
+                playerSpeed += frictionNorm * mult;
                 if (playerSpeed * mult > max) {
                     playerSpeed = max * mult;
                 }
             } else { // Over max speed
-                playerSpeed -= frictionOverMax * DeltaTime * mult;
+                playerSpeed -= frictionOverMax * mult;
                 if (playerSpeed * mult < max) {
                     playerSpeed = max * mult;
                 }
@@ -173,15 +178,15 @@
                 }
                 foreach (var f in formatted) {
                     if (f.Item2) {
-                        result += $"{f.Item1},G{additionalInputs}{mString}{dirString}\n";
+                        result += $"{f.Item1.ToString().PadLeft(4, ' ')},G{additionalInputs}{mString}{dirString}\n";
                     } else {
-                        result += $"{f.Item1},G{additionalInputs}\n";
+                        result += $"{f.Item1.ToString().PadLeft(4, ' ')},G{additionalInputs}\n";
                     }
                 }
                 if (input[8]) {
-                    result += $"1{additionalInputs}{mString}{dirString},D\n";
+                    result += $"   1{additionalInputs}{mString}{dirString},D\n";
                 } else {
-                    result += $"1{additionalInputs}{mString},D\n";
+                    result += $"   1{additionalInputs}{mString},D\n";
                 }
             }
             // Copy to clipboard (for easy insertion)
