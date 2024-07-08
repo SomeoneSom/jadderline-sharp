@@ -44,7 +44,7 @@
                 } else {
                     max = results.IndexOf(results.Min());
                 }
-                if (results[max] == float.NegativeInfinity && results[max] == float.PositiveInfinity) {
+                if (results[max] == float.NegativeInfinity || results[max] == float.PositiveInfinity) {
                     throw new ArgumentException("Malformed input or impossible jelly ladder"); // Is this actually the right exception to use? No clue
                 }
                 inputs.Add(potential[max].Item1);
