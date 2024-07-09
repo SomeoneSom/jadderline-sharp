@@ -16,6 +16,7 @@
             if (ladders < 2) { // Because we calculate the jelly ladders in 2 regrab windows
                 throw new ArgumentException("Must calculate at least 2 ladders");
             }
+            jelly2Pos = float.Round(jelly2Pos);
             float jelly1Pos = (float)playerPos; // Since this is the one we are about to grab
             // Get all 262144 candidates for inputs
             List<(bool[], bool[])> potential = new();
